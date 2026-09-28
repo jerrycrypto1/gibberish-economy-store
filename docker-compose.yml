@@ -1,0 +1,13 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ge
+      POSTGRES_PASSWORD: ge
+      POSTGRES_DB: gibberish
+    ports:
+      - "5432:5432"
+    volumes:
+      - ge_pg:/var/lib/postgresql/data
+volumes:
+  ge_pg:

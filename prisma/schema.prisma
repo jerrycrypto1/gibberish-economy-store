@@ -1,0 +1,130 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  RESERVED
+  FULFILLING
+  SHIPPED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  STRIPE
+  WIRE
+  CRYPTO
+  DEMO
+}
+
+model Product {
+  id          String      @id @default(cuid())
+  slug        String      @unique
+  name        String
+  subtitle    String
+  collection  String
+  category    String
+  priceCents  Int
+  compareCents Int?
+  currency    String      @default("USD")
+  edition     String
+  editionSize Int?
+  remaining   Int
+  sku         String      @unique
+  description String
+  story       String
+  materials   String
+  origin      String
+  nfcEnabled  Boolean     @default(true)
+  featured    Boolean     @default(false)
+  images      String[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  variants    Variant[]
+  orderItems  OrderItem[]
+}
+
+model Variant {
+  id         String      @id @default(cuid())
+  productId  String
+  product    Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name       String
+  sku        String      @unique
+  priceCents Int?
+  stock      Int         @default(1)
+  orderItems OrderItem[]
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  orders    Order[]
+}
+
+model Order {
+  id              String        @id @default(cuid())
+  number          String        @unique
+  status          OrderStatus   @default(PENDING)
+  paymentMethod   PaymentMethod @default(DEMO)
+  stripeSessionId String?
+  email           String
+  name            String
+  phone           String?
+  line1           String?
+  line2           String?
+  city            String?
+  region          String?
+  postal          String?
+  country         String        @default("AE")
+  notes           String?
+  subtotalCents   Int
+  shippingCents   Int           @default(0)
+  totalCents      Int
+  currency        String        @default("USD")
+  customerId      String?
+  customer        Customer?     @relation(fields: [customerId], references: [id])
+  items           OrderItem[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model OrderItem {
+  id          String   @id @default(cuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  variantId   String?
+  variant     Variant? @relation(fields: [variantId], references: [id])
+  name        String
+  sku         String
+  quantity    Int
+  priceCents  Int
+  serialHint  String?
+}
+
+model Waitlist {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  interest  String?
+  createdAt DateTime @default(now())
+}
+
+model Provenance {
+  id          String   @id @default(cuid())
+  serial      String   @unique
+  productSlug String
+  ownerAlias  String?
+  mintedAt    DateTime @default(now())
+  chainHint   String   @default("Ethereum L2 · forthcoming mainnet bind")
+  nfcUid      String
+  chapter     String
+}
